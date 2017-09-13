@@ -90,7 +90,6 @@ contract TableCoin is SafeMath, Owned {
 
     //ERC-20 Functions//
     ////////////////////
-
     function transfer(address _to, uint256 _amount) public returns (bool success) {
         require(_amount > 0);
         require(balances[msg.sender] - _amount >= 0);
@@ -101,6 +100,23 @@ contract TableCoin is SafeMath, Owned {
         return true;
     }
 
+    function transferFrom(address _from, address _to, uint256 _amount) public returns (bool success) {
+        require(allowance[_from][msg.sender] > 0);
+        require(allowance[_from][msg.sender] - _amount > 0);
+        require(balances[_from] - _amount > 0);
+        require(balances[_to] + _amount > balances[_to]);
+        balances[_from] -= _amount;
+        balances[_to] += _amount;
+        allowance[_from][msg.sender] -= _amount;
+        Transfer(_from, _to, _amount);
+        return true; 
+    }
+
+    function approve(address _spender, uint256 _amount) public returns (bool success) {
+        require(_amount > 0);
+        allowance[msg.sender][_spender] = _amount;
+        return true;
+    }
 
     //GETTER Functions//
     function balanceOf(address _person) constant returns (uint256 _amount) {
@@ -114,8 +130,11 @@ contract TableCoin is SafeMath, Owned {
     function getTotalSupply() constant returns (uint256 _totalSupply) {
         return totalSupply;
     }
-
-
     //ERC-20 Functions//
     ////////////////////
+
+    function() payable {
+        require(msg.value == 0);
+    }
+
 }
