@@ -1,4 +1,4 @@
-pragma solidity 0.4.13;
+pragma solidity 0.4.16;
 
 // Used for function invoke restriction
 contract Owned {
@@ -85,12 +85,16 @@ contract TableCoin is SafeMath, Owned {
         name = _name;
         symbol = _symbol;
         decimals = 18;
+        // 15 mil in wei
+        totalSupply = 15000000000000000000000000;
+        balances[owner] = totalSupply;
     }
 
 
     //ERC-20 Functions//
     ////////////////////
     function transfer(address _to, uint256 _amount) public returns (bool success) {
+        require(_to != address(0));
         require(_amount > 0);
         require(balances[msg.sender] - _amount >= 0);
         require(balances[_to] + _amount > balances[_to]);
@@ -101,6 +105,7 @@ contract TableCoin is SafeMath, Owned {
     }
 
     function transferFrom(address _from, address _to, uint256 _amount) public returns (bool success) {
+        require(_to != address(0));
         require(allowance[_from][msg.sender] > 0);
         require(allowance[_from][msg.sender] - _amount > 0);
         require(balances[_from] - _amount > 0);
@@ -130,6 +135,8 @@ contract TableCoin is SafeMath, Owned {
     function getTotalSupply() constant returns (uint256 _totalSupply) {
         return totalSupply;
     }
+    
+    ////////////////////
     //ERC-20 Functions//
     ////////////////////
 
