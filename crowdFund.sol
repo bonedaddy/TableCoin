@@ -97,6 +97,7 @@ contract CrowdFund is SafeMath, Owned {
     uint256     public startOfPresaleInMinutes;
     address     public tokenContractAddress;
     bool        public crowdFundFrozen;
+    bool        public crowdFundingStopped;
     TableCoin   public tokenReward;
     address     public hotWallet;
 
@@ -116,9 +117,10 @@ contract CrowdFund is SafeMath, Owned {
     }
 
     function CrowdFund() {
-        tokenContractAddress = 0xC852c0828676B62D15D7C10191A234d830d22e15;
+        tokenContractAddress = 0x933ef4aA757aA961766c4f451Ac7678dDe40E792;
         tokenReward = TableCoin(tokenContractAddress);
         crowdFundFrozen = true;
+        crowdFundingStopped = true;
     }
 
     function setHotWallet(address _hotWallet) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
@@ -126,11 +128,23 @@ contract CrowdFund is SafeMath, Owned {
         return true;
     }
 
+    function stopCrowdFunding() onlyOwner public returns (bool success) {
+        assert(tokensLeft == 0);
+        crowdFundingStopped = true;
+        return true;
+    }
+
+    function startCrowdFunding() onlyOwner public returns (bool success) {
+        crowdFundingStopped = false;
+        return true;
+    }
+    
     function setCrowdFundReserve(uint256 _amount) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
         require(_amount > 0);
         crowdFundReserve = _amount;
         tokensLeft = crowdFundReserve;
         crowdFundFrozen = false;
+        crowdFundingStopped = false;
         LaunchCrowdFund(true);
         return true;
     }
@@ -138,18 +152,19 @@ contract CrowdFund is SafeMath, Owned {
     // low level purchase function
     function tokenPurchase() payable {
         assert(!crowdFundFrozen);
+        assert(!crowdFundingStopped);
+        assert(tokensLeft > 0);
         require(msg.value > 0);
         require(msg.value >= tokenCostInWei);
         uint256 _amountTBCReceive = div(msg.value, tokenCostInWei);
         uint256 amountTBCReceive = mul(_amountTBCReceive, 1 ether);
         uint256 amountCharged;
+        // checks to see if backer is trying to buy more than the available supply of tokens
         if (amountTBCReceive > tokensLeft) {
-            // this block runs if there are less tokens than the buyer is purchasing
             amountTBCReceive = tokensLeft;
             amountCharged = mul(amountTBCReceive,1 ether);
             uint256 amountRefund = msg.value - amountCharged;
         } else {
-            // this block runs if there are more tokens than the buyer is purchasing
             amountCharged = msg.value;
         }
         balances[msg.sender] = safeAdd(balances[msg.sender], amountTBCReceive);
@@ -166,6 +181,8 @@ contract CrowdFund is SafeMath, Owned {
         }  
     }
 
+    // Fallback Function
+    // Used to trigger purchasing of tokens
     function() payable {
         tokenPurchase();
     }

@@ -12,6 +12,7 @@ TableCoin repository
 * Optimize
 * Test
 * Write Deployment Guide
+* Add natspec documentation
 
 # Dev To Do
 
