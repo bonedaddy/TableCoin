@@ -15,6 +15,7 @@ contract TableCoin {
     }
 
     function transfer(address _to, uint256 _amount) public returns (bool success) {
+        // msg.sender 
         balances[msg.sender] -= _amount;
         balances[_to] += _amount;
         Transfer(msg.sender, _to, _amount);
@@ -90,6 +91,7 @@ contract CrowdFund is SafeMath, Owned {
     uint256     public fundingGoalInEther;
     uint256     public crowdFundReserve = 0;
     uint256     public tokensBought;
+    uint256     public tokensLeft;
     uint256     public presaleDeadline;
     // start of presale block #
     uint256     public startOfPresaleInBlockNumber;
@@ -98,6 +100,8 @@ contract CrowdFund is SafeMath, Owned {
     address     public tokenContractAddress;
     bool        public crowdFundFrozen;
     TableCoin   public tokenReward;
+    // used to store the funds raised from the crowdfund
+    address     public hotWallet;
 
     event LaunchCrowdFund(bool launched);
     event FundTransfer(address _backer, uint256 _amount, bool didContribute);
@@ -129,18 +133,36 @@ contract CrowdFund is SafeMath, Owned {
 
     function setCrowdFundReserve(uint256 _amount) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
         crowdFundReserve = _amount;
+        tokensLeft = crowdFundReserve;
     }
 
     function() payable {
         require(!crowdFundFrozen);
-        require(msg.value > 0 && msg.value >= tokenCostInWei);
+        require(msg.value >= tokenCostInWei);
         uint256 _amountTBCReceive = div(msg.value, tokenCostInWei);
         uint256 amountTBCReceive = mul(_amountTBCReceive, 1 ether);
-        balances[msg.sender] = safeAdd(balances[msg.sender], amountTBCReceive);
-        if (!tokenReward.transfer(msg.sender, amountTBCReceive)) {
-            revert();
+        require(amountTBCReceive <= tokensLeft);
+        uint256 amountCharged;
+        if (amountTBCReceive > tokensLeft) {
+            // this block runs if there are less tokens than the buyer is purchasing
+            amountTBCReceive = tokensLeft;
+            amountCharged = mul(amountTBCReceive,1 ether);
+            uint256 amountRefund = msg.value - amountCharged;
         } else {
+            // this block runs if there are more tokens than the buyer is purchasing
+            amountCharged = msg.value;
+        }
+        balances[msg.sender] = safeAdd(balances[msg.sender], amountTBCReceive);
+        tokensBought = safeAdd(tokensBought, amountTBCReceive);
+        tokensLeft = safeSub(tokensLeft, amountTBCReceive);
+        if (tokenReward.transfer(msg.sender, amountTBCReceive)) {
             FundTransfer(msg.sender, amountTBCReceive, true);
+            hotWallet.transfer(amountCharged);
+            if (amountRefund > 0) {
+                msg.sender.transfer(amountRefund);
+            }
+        } else {
+            revert();
         }
     }
 }
