@@ -13,7 +13,15 @@ TableCoin repository
 * Test
 * Write Deployment Guide
 
+# Dev To Do
 
+1) Funding Goal In Ethers need to ber set
+2) Hot Wallet needs to be Set
+3) Tokens Left Needs To be Set
+
+
+
+## DEPLOYMENJT ORDER
 
 1)    function setHotWallet(address _hotWallet) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
         hotWallet = _hotWallet;

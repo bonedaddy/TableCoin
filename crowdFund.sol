@@ -93,14 +93,11 @@ contract CrowdFund is SafeMath, Owned {
     uint256     public tokensBought;
     uint256     public tokensLeft;
     uint256     public presaleDeadline;
-    // start of presale block #
     uint256     public startOfPresaleInBlockNumber;
-    // start of presale in minutes
     uint256     public startOfPresaleInMinutes;
     address     public tokenContractAddress;
     bool        public crowdFundFrozen;
     TableCoin   public tokenReward;
-    // used to store the funds raised from the crowdfund
     address     public hotWallet;
 
     event LaunchCrowdFund(bool launched);
@@ -140,12 +137,11 @@ contract CrowdFund is SafeMath, Owned {
 
     // low level purchase function
     function tokenPurchase() payable {
-        assert(crowdFundFrozen == false);
-        assert(msg.value > 0);
+        assert(!crowdFundFrozen);
+        require(msg.value > 0);
         require(msg.value >= tokenCostInWei);
         uint256 _amountTBCReceive = div(msg.value, tokenCostInWei);
         uint256 amountTBCReceive = mul(_amountTBCReceive, 1 ether);
-        require(amountTBCReceive <= tokensLeft);
         uint256 amountCharged;
         if (amountTBCReceive > tokensLeft) {
             // this block runs if there are less tokens than the buyer is purchasing
