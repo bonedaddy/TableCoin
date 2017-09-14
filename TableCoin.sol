@@ -66,8 +66,9 @@ contract SafeMath {
 contract TableCoin is SafeMath, Owned {
 
     string public name;
-    string public symbol;
+    string public symbol; //TAC is symbol
     uint256 public totalSupply;
+    uint256 public tacPassCostInWei = 10000000000000000000000;
     uint8 public decimals;
 
     // Balances
@@ -85,8 +86,8 @@ contract TableCoin is SafeMath, Owned {
         name = _name;
         symbol = _symbol;
         decimals = 18;
-        // 15 mil in wei
-        totalSupply = 15000000000000000000000000;
+        // 1Bil in Wei
+        totalSupply = 1000000000000000000000000000;
         balances[owner] = totalSupply;
     }
 

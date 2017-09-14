@@ -86,7 +86,9 @@ contract SafeMath {
 
 contract CrowdFund is SafeMath, Owned {
 
+    uint256     public tokenCostInWei = 3000000000000000;
     uint256     public fundingGoalInEther;
+    uint256     public crowdFundReserve = 0;
     uint256     public tokensBought;
     uint256     public presaleDeadline;
     // start of presale block #
@@ -95,24 +97,50 @@ contract CrowdFund is SafeMath, Owned {
     uint256     public startOfPresaleInMinutes;
     address     public tokenContractAddress;
     bool        public crowdFundFrozen;
-    TableCoin   public tbc;
+    TableCoin   public tokenReward;
 
     event LaunchCrowdFund(bool launched);
+    event FundTransfer(address _backer, uint256 _amount, bool didContribute);
+    
+    mapping (address => uint256) public balances;
+
+    modifier onlyAfterReserveSet() {
+        require(crowdFundReserve > 0);
+        _;
+    }
+
+    modifier onlyBeforeCrowdFundStart() {
+        require(crowdFundFrozen);
+        _;
+    }
 
     function CrowdFund(address _tokenContractAddress) {
         tokenContractAddress = _tokenContractAddress;
-        tokenReward = tbc(tokenContractAddress);
+        tokenReward = TableCoin(tokenContractAddress);
         crowdFundFrozen = true;
     }
 
-    function startCrowdFund() {
+    function startCrowdFund() onlyOwner onlyAfterReserveSet public returns (bool success) {
         startOfPresaleInBlockNumber = now;
         startOfPresaleInMinutes = now * 1 minutes;
         crowdFundFrozen = false;
+        return true;
     }
 
+    function setCrowdFundReserve(uint256 _amount) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
+        crowdFundReserve = _amount;
+    }
 
     function() payable {
         require(!crowdFundFrozen);
+        require(msg.value > 0 && msg.value >= tokenCostInWei);
+        uint256 _amountTBCReceive = div(msg.value, tokenCostInWei);
+        uint256 amountTBCReceive = mul(_amountTBCReceive, 1 ether);
+        balances[msg.sender] = safeAdd(balances[msg.sender], amountTBCReceive);
+        if (!tokenReward.transfer(msg.sender, amountTBCReceive)) {
+            revert();
+        } else {
+            FundTransfer(msg.sender, amountTBCReceive, true);
+        }
     }
 }
