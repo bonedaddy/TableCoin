@@ -118,49 +118,42 @@ contract CrowdFund is SafeMath, Owned {
         _;
     }
 
-    function CrowdFund(address _tokenContractAddress) {
-        tokenContractAddress = _tokenContractAddress;
+    function CrowdFund() {
+        tokenContractAddress = 0x933ef4aA757aA961766c4f451Ac7678dDe40E792;
         tokenReward = TableCoin(tokenContractAddress);
         crowdFundFrozen = true;
     }
 
-    function startCrowdFund() onlyOwner onlyAfterReserveSet public returns (bool success) {
-        startOfPresaleInBlockNumber = now;
-        startOfPresaleInMinutes = now * 1 minutes;
-        crowdFundFrozen = false;
+    function setHotWallet(address _hotWallet) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
+        hotWallet = _hotWallet;
         return true;
     }
 
     function setCrowdFundReserve(uint256 _amount) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
         crowdFundReserve = _amount;
         tokensLeft = crowdFundReserve;
+        crowdFundFrozen = false;
+        LaunchCrowdFund(true);
+        return true;
     }
 
-    function tbcReceiveCalculator(uint256 _msgValue) internal returns (uint256 value) {
-        uint256 _amountReceive = div(_msgValue, tokenCostInWei);
-        uint256 amountReceive = mul(_amountReceive, 1 ether);
-        return amountReceive;
-    }
-
-    function amountChargedCalculator(uint256 _tokensReceive, uint256 _msgValue) internal returns (uint256 value) {
-        uint256 _amountCharged;
-        if (_tokensReceive > tokensLeft) {
-            uint256 _amountTBCReceive = tokensLeft;
-            _amountCharged = mul(_amountTBCReceive, 1 ether);
-        } else {
-            _amountCharged = _msgValue;
-        }
-        return _amountCharged;
-    }
-
-    function() payable {
+    // low level purchase function
+    function tokenPurchase() payable {
         assert(crowdFundFrozen == false);
+        assert(msg.value > 0);
         require(msg.value >= tokenCostInWei);
-        uint256 amountTBCReceive = tbcReceiveCalculator(msg.value);
+        uint256 _amountTBCReceive = div(msg.value, tokenCostInWei);
+        uint256 amountTBCReceive = mul(_amountTBCReceive, 1 ether);
+        require(amountTBCReceive <= tokensLeft);
         uint256 amountCharged;
-        amountCharged = amountChargedCalculator(amountTBCReceive, msg.value);
         if (amountTBCReceive > tokensLeft) {
-            uint256 amountRefund = safeSub(msg.value, amountCharged);
+            // this block runs if there are less tokens than the buyer is purchasing
+            amountTBCReceive = tokensLeft;
+            amountCharged = mul(amountTBCReceive,1 ether);
+            uint256 amountRefund = msg.value - amountCharged;
+        } else {
+            // this block runs if there are more tokens than the buyer is purchasing
+            amountCharged = msg.value;
         }
         balances[msg.sender] = safeAdd(balances[msg.sender], amountTBCReceive);
         tokensBought = safeAdd(tokensBought, amountTBCReceive);
@@ -173,6 +166,10 @@ contract CrowdFund is SafeMath, Owned {
             }
         } else {
             revert();
-        }
+        }  
+    }
+
+    function() payable {
+        tokenPurchase();
     }
 }

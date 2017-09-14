@@ -133,7 +133,7 @@ contract TableCoin is SafeMath, Owned {
         return allowance[_owner][_spender];
     }
 
-    function getTotalSupply() constant returns (uint256 _totalSupply) {
+    function totalSupply() constant returns (uint256 _totalSupply) {
         return totalSupply;
     }
     
