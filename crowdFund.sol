@@ -109,17 +109,17 @@ contract CrowdFund is SafeMath, Owned {
     mapping (address => uint256) public balances;
 
     modifier onlyAfterReserveSet() {
-        require(crowdFundReserve > 0);
+        assert(crowdFundReserve > 0);
         _;
     }
 
     modifier onlyBeforeCrowdFundStart() {
-        require(crowdFundFrozen);
+        assert(crowdFundFrozen);
         _;
     }
 
     function CrowdFund() {
-        tokenContractAddress = 0x933ef4aA757aA961766c4f451Ac7678dDe40E792;
+        tokenContractAddress = 0xC852c0828676B62D15D7C10191A234d830d22e15;
         tokenReward = TableCoin(tokenContractAddress);
         crowdFundFrozen = true;
     }
@@ -130,6 +130,7 @@ contract CrowdFund is SafeMath, Owned {
     }
 
     function setCrowdFundReserve(uint256 _amount) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
+        require(_amount > 0);
         crowdFundReserve = _amount;
         tokensLeft = crowdFundReserve;
         crowdFundFrozen = false;
