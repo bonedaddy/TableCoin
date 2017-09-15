@@ -97,7 +97,6 @@ contract CrowdFund is SafeMath, Owned {
     uint256     public startOfPresaleInMinutes;
     address     public tokenContractAddress;
     bool        public crowdFundFrozen;
-    bool        public crowdFundingStopped;
     bool        public crowdFundingLaunched;
     TableCoin   public tokenReward;
     address     public hotWallet;
@@ -126,7 +125,6 @@ contract CrowdFund is SafeMath, Owned {
         tokenContractAddress = 0xC852c0828676B62D15D7C10191A234d830d22e15;
         tokenReward = TableCoin(tokenContractAddress);
         crowdFundFrozen = true;
-        crowdFundingStopped = true;
     }
 
     // 1st step in deployment
@@ -137,13 +135,13 @@ contract CrowdFund is SafeMath, Owned {
 
     function stopCrowdFunding() onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
         assert(tokensLeft == 0);
-        crowdFundingStopped = true;
+        crowdFundFrozen = true;
         return true;
     }
 
     function startCrowdFunding() onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
         assert(tokensLeft > 0);
-        crowdFundingStopped = false;
+        crowdFundFrozen = false;
         return true;
     }
     
@@ -153,7 +151,6 @@ contract CrowdFund is SafeMath, Owned {
         crowdFundReserve = _amount;
         tokensLeft = crowdFundReserve;
         crowdFundFrozen = false;
-        crowdFundingStopped = false;
         crowdFundingLaunched = true;
         balances[this] = crowdFundReserve;
         LaunchCrowdFund(true);
@@ -164,7 +161,6 @@ contract CrowdFund is SafeMath, Owned {
     function tokenPurchase(address beneficiary) payable {
         require(beneficiary != 0x0);
         assert(!crowdFundFrozen);
-        assert(!crowdFundingStopped);
         assert(tokensLeft > 0);
         require(msg.value > 0);
         require(msg.value >= tokenCostInWei);
@@ -188,6 +184,9 @@ contract CrowdFund is SafeMath, Owned {
         balances[this] = safeSub(balances[this], amountTBCReceive);
         tokensBought = safeAdd(tokensBought, amountTBCReceive);
         tokensLeft = safeSub(tokensLeft, amountTBCReceive);
+        if (tokensLeft == 0) {
+            crowdFundFrozen = true;
+        }
         crowdFundReserve = safeSub(crowdFundReserve, amountTBCReceive);
         if (tokenReward.transfer(beneficiary, amountTBCReceive)) {
             FundTransfer(beneficiary, amountTBCReceive, true);
