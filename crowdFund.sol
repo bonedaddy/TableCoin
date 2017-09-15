@@ -1,7 +1,5 @@
 pragma solidity 0.4.16;
 
-
-
 contract TableCoin {
 
     uint256 public crowdFundReserveAmount;
@@ -154,8 +152,11 @@ contract CrowdFund is SafeMath, Owned {
         return true;
     }
     
+    /// @notice used to add funds to the crowdfund reserve post launch
+    /// @param _amount Specifies the amount of tokens to add
     function addToReserve(uint256 _amount) onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
         crowdFundReserve = safeAdd(crowdFundReserve, _amount);
+        balances[this] = safeAdd(balances[this], _amount);
         return true;
     }
 
@@ -214,10 +215,10 @@ contract CrowdFund is SafeMath, Owned {
         balances[this] = safeSub(balances[this], amountTBCReceive);
         tokensBought = safeAdd(tokensBought, amountTBCReceive);
         tokensLeft = safeSub(tokensLeft, amountTBCReceive);
+        crowdFundReserve = safeSub(crowdFundReserve, amountTBCReceive);
         if (tokensLeft == 0) {
             crowdFundFrozen = true;
         }
-        crowdFundReserve = safeSub(crowdFundReserve, amountTBCReceive);
         if (tokenReward.transfer(beneficiary, amountTBCReceive)) {
             FundTransfer(beneficiary, amountTBCReceive, true);
             hotWallet.transfer(amountCharged);

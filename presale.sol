@@ -107,6 +107,7 @@ contract CrowdFund is SafeMath, Owned {
     event HotWalletSet(bool set);
 
     mapping (address => uint256) public balances;
+    mapping (address => uint256) ethBalances;
 
     modifier onlyAfterReserveSet() {
         assert(crowdFundReserve > 0);
@@ -164,6 +165,19 @@ contract CrowdFund is SafeMath, Owned {
         return true;
     }
 
+    /// @notice Used when someone needsd to withdraw ethereum from the contract
+    function safeWithdrawEth() payable {
+        assert(ethBalances[msg.sender] > 0);
+        require(msg.value == 0);
+        address addrToRefund = msg.sender;
+        uint256 amountRefund = ethBalances[msg.sender];
+        ethBalances[msg.sender] = 0;
+        if (addrToRefund.call.value(amountRefund)()) {
+        } else {
+            revert();
+        }
+    }
+
     // low level purchase function
     function tokenPurchase(address beneficiary) payable {
         assert(!crowdFundFrozen);
@@ -172,7 +186,7 @@ contract CrowdFund is SafeMath, Owned {
         assert(tokensLeft > 0);
         require(msg.value > 0);
         require(msg.value >= tokenCostInWei);
-        uint256 _amountTBCReceive = div(msg.value, tokenCostInWei);
+         uint256 _amountTBCReceive = div(msg.value, tokenCostInWei);
         // calculates the amount of tokens to receive in wei
         uint256 amountTBCReceive = mul(_amountTBCReceive, 1 ether);
         uint256 amountCharged;
@@ -191,15 +205,16 @@ contract CrowdFund is SafeMath, Owned {
         balances[this] = safeSub(balances[this], amountTBCReceive);
         tokensBought = safeAdd(tokensBought, amountTBCReceive);
         tokensLeft = safeSub(tokensLeft, amountTBCReceive);
+        crowdFundReserve = safeSub(crowdFundReserve, amountTBCReceive);
         if (tokensLeft == 0) {
             crowdFundFrozen = true;
         }
-        crowdFundReserve = safeSub(crowdFundReserve, amountTBCReceive);
         if (tokenReward.transfer(beneficiary, amountTBCReceive)) {
             FundTransfer(beneficiary, amountTBCReceive, true);
             hotWallet.transfer(amountCharged);
             if (amountRefund > 0) {
-                beneficiary.transfer(amountRefund);
+                // this forces the user to manually withdraw any additional ethereum
+                ethBalances[beneficiary] = safeAdd(ethBalances[beneficiary], amountRefund);
             }
         } else {
             revert();
