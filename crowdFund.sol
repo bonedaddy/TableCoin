@@ -123,7 +123,7 @@ contract CrowdFund is SafeMath, Owned {
     }
 
     function CrowdFund() {
-        tokenContractAddress = 0x933ef4aA757aA961766c4f451Ac7678dDe40E792;
+        tokenContractAddress = 0xC852c0828676B62D15D7C10191A234d830d22e15;
         tokenReward = TableCoin(tokenContractAddress);
         crowdFundFrozen = true;
         crowdFundingStopped = true;
@@ -160,32 +160,37 @@ contract CrowdFund is SafeMath, Owned {
     }
 
     // low level purchase function
-    function tokenPurchase() payable {
+    function tokenPurchase(address beneficiary) payable {
+        require(beneficiary != 0x0);
         assert(!crowdFundFrozen);
         assert(!crowdFundingStopped);
         assert(tokensLeft > 0);
         require(msg.value > 0);
         require(msg.value >= tokenCostInWei);
         uint256 _amountTBCReceive = div(msg.value, tokenCostInWei);
+        // calculates the amount of tokens to receive in wei
         uint256 amountTBCReceive = mul(_amountTBCReceive, 1 ether);
         uint256 amountCharged;
+        uint256 amountRefund;
         // checks to see if backer is trying to buy more than the available supply of tokens
         // for testing we added >=
         if (amountTBCReceive >= tokensLeft) {
             amountTBCReceive = tokensLeft;
-            amountCharged = mul(amountTBCReceive,1 ether);
-            uint256 amountRefund = msg.value - amountCharged;
+            uint256 _amountCharged = mul(amountTBCReceive, tokenCostInWei);
+            amountCharged = div(_amountCharged, 1 ether);
+            amountRefund = msg.value - amountCharged;
         } else {
             amountCharged = msg.value;
+            amountRefund = 0;
         }
-        balances[msg.sender] = safeAdd(balances[msg.sender], amountTBCReceive);
+        balances[beneficiary] = safeAdd(balances[beneficiary], amountTBCReceive);
         tokensBought = safeAdd(tokensBought, amountTBCReceive);
         tokensLeft = safeSub(tokensLeft, amountTBCReceive);
-        if (tokenReward.transfer(msg.sender, amountTBCReceive)) {
-            FundTransfer(msg.sender, amountTBCReceive, true);
+        if (tokenReward.transfer(beneficiary, amountTBCReceive)) {
+            FundTransfer(beneficiary, amountTBCReceive, true);
             hotWallet.transfer(amountCharged);
             if (amountRefund > 0) {
-                msg.sender.transfer(amountRefund);
+                beneficiary.transfer(amountRefund);
             }
         } else {
             revert();
@@ -195,6 +200,6 @@ contract CrowdFund is SafeMath, Owned {
     // Fallback Function
     // Used to trigger purchasing of tokens
     function() payable {
-        tokenPurchase();
+        tokenPurchase(msg.sender);
     }
 }
