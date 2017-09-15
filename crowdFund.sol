@@ -98,6 +98,7 @@ contract CrowdFund is SafeMath, Owned {
     address     public tokenContractAddress;
     bool        public crowdFundFrozen;
     bool        public crowdFundingStopped;
+    bool        public crowdFundingLaunched;
     TableCoin   public tokenReward;
     address     public hotWallet;
 
@@ -116,6 +117,11 @@ contract CrowdFund is SafeMath, Owned {
         _;
     }
 
+    modifier onlyAfterCrowdFundingLaunch() {
+        assert(crowdFundingLaunched);
+        _;
+    }
+
     function CrowdFund() {
         tokenContractAddress = 0x933ef4aA757aA961766c4f451Ac7678dDe40E792;
         tokenReward = TableCoin(tokenContractAddress);
@@ -123,28 +129,32 @@ contract CrowdFund is SafeMath, Owned {
         crowdFundingStopped = true;
     }
 
+    // 1st step in deployment
     function setHotWallet(address _hotWallet) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
         hotWallet = _hotWallet;
         return true;
     }
 
-    function stopCrowdFunding() onlyOwner public returns (bool success) {
+    function stopCrowdFunding() onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
         assert(tokensLeft == 0);
         crowdFundingStopped = true;
         return true;
     }
 
-    function startCrowdFunding() onlyOwner public returns (bool success) {
+    function startCrowdFunding() onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
+        assert(tokensLeft > 0);
         crowdFundingStopped = false;
         return true;
     }
     
+    // 2nd step in deployment
     function setCrowdFundReserve(uint256 _amount) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
         require(_amount > 0);
         crowdFundReserve = _amount;
         tokensLeft = crowdFundReserve;
         crowdFundFrozen = false;
         crowdFundingStopped = false;
+        crowdFundingLaunched = true;
         LaunchCrowdFund(true);
         return true;
     }
@@ -160,7 +170,8 @@ contract CrowdFund is SafeMath, Owned {
         uint256 amountTBCReceive = mul(_amountTBCReceive, 1 ether);
         uint256 amountCharged;
         // checks to see if backer is trying to buy more than the available supply of tokens
-        if (amountTBCReceive > tokensLeft) {
+        // for testing we added >=
+        if (amountTBCReceive >= tokensLeft) {
             amountTBCReceive = tokensLeft;
             amountCharged = mul(amountTBCReceive,1 ether);
             uint256 amountRefund = msg.value - amountCharged;
