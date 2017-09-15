@@ -1,0 +1,15 @@
+Tested:
+
+
+
+Need To Test:
+
+> presale
+> crowdfund
+> token contract
+
+
+
+crowdfund testing:
+Everything seems to work
+-> Need to do one more test after adding the hotwallet check

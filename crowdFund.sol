@@ -24,14 +24,15 @@ contract TableCoin {
 }
 contract Owned {
 
-    address public owner; // temporary address
+    address     public owner; // temporary address
+    address     public privilegedAccount;
 
     function Owned() {
         owner = msg.sender;
     }
 
     modifier onlyOwner() {
-        if (msg.sender != owner)
+        if (msg.sender != owner || msg.sender != privilegedAccount)
             revert();
         _; // function code inserted here
     }
@@ -45,6 +46,12 @@ contract Owned {
         
     }
 
+
+    function setPrivilegedAccount(address _privAcct) onlyOwner returns (bool success) {
+        require(_privAcct != owner);
+        privilegedAccount = _privAcct;
+        return true;
+    }
 }
 
 contract SafeMath {
@@ -98,11 +105,13 @@ contract CrowdFund is SafeMath, Owned {
     address     public tokenContractAddress;
     bool        public crowdFundFrozen;
     bool        public crowdFundingLaunched;
+    bool        public hotWalletSet;
     TableCoin   public tokenReward;
     address     public hotWallet;
 
     event LaunchCrowdFund(bool launched);
     event FundTransfer(address _backer, uint256 _amount, bool didContribute);
+    event HotWalletSet(bool set);
     
     mapping (address => uint256) public balances;
 
@@ -121,15 +130,18 @@ contract CrowdFund is SafeMath, Owned {
         _;
     }
 
-    function CrowdFund() {
-        tokenContractAddress = 0xC852c0828676B62D15D7C10191A234d830d22e15;
+    function CrowdFund(address _tokenContractAddress) {
+        tokenContractAddress = _tokenContractAddress;
         tokenReward = TableCoin(tokenContractAddress);
         crowdFundFrozen = true;
+        hotWalletSet = false;
     }
 
     // 1st step in deployment
     function setHotWallet(address _hotWallet) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
         hotWallet = _hotWallet;
+        hotWalletSet = true;
+        HotWalletSet(true);
         return true;
     }
 
@@ -147,6 +159,7 @@ contract CrowdFund is SafeMath, Owned {
     
     // 2nd step in deployment, starts crowdfund
     function setCrowdFundReserve(uint256 _amount) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
+        assert(hotWalletSet);
         require(_amount > 0);
         crowdFundReserve = _amount;
         tokensLeft = crowdFundReserve;
@@ -159,9 +172,9 @@ contract CrowdFund is SafeMath, Owned {
 
     // low level purchase function
     function tokenPurchase(address beneficiary) payable {
-        require(beneficiary != 0x0);
         assert(!crowdFundFrozen);
         assert(tokensLeft > 0);
+        require(beneficiary != 0x0);
         require(msg.value > 0);
         require(msg.value >= tokenCostInWei);
         uint256 _amountTBCReceive = div(msg.value, tokenCostInWei);
@@ -170,7 +183,6 @@ contract CrowdFund is SafeMath, Owned {
         uint256 amountCharged;
         uint256 amountRefund;
         // checks to see if backer is trying to buy more than the available supply of tokens
-        // for testing we added >=
         if (amountTBCReceive >= tokensLeft) {
             amountTBCReceive = tokensLeft;
             uint256 _amountCharged = mul(amountTBCReceive, tokenCostInWei);
