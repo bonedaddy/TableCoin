@@ -147,7 +147,7 @@ contract CrowdFund is SafeMath, Owned {
         return true;
     }
     
-    // 2nd step in deployment
+    // 2nd step in deployment, starts crowdfund
     function setCrowdFundReserve(uint256 _amount) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
         require(_amount > 0);
         crowdFundReserve = _amount;
@@ -155,6 +155,7 @@ contract CrowdFund is SafeMath, Owned {
         crowdFundFrozen = false;
         crowdFundingStopped = false;
         crowdFundingLaunched = true;
+        balances[this] = crowdFundReserve;
         LaunchCrowdFund(true);
         return true;
     }
@@ -184,8 +185,10 @@ contract CrowdFund is SafeMath, Owned {
             amountRefund = 0;
         }
         balances[beneficiary] = safeAdd(balances[beneficiary], amountTBCReceive);
+        balances[this] = safeSub(balances[this], amountTBCReceive);
         tokensBought = safeAdd(tokensBought, amountTBCReceive);
         tokensLeft = safeSub(tokensLeft, amountTBCReceive);
+        crowdFundReserve = safeSub(crowdFundReserve, amountTBCReceive);
         if (tokenReward.transfer(beneficiary, amountTBCReceive)) {
             FundTransfer(beneficiary, amountTBCReceive, true);
             hotWallet.transfer(amountCharged);
