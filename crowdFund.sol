@@ -84,23 +84,20 @@ contract SafeMath {
 
 }
 
-
+/// @title CrowdFunding Contract
+/// @author Alexandre Trottier [Postables]
 contract CrowdFund is SafeMath, Owned {
 
     uint256     public tokenCostInWei = 3000000000000000;
-    uint256     public fundingGoalInEther;
     uint256     public crowdFundReserve = 0;
     uint256     public tokensBought;
     uint256     public tokensLeft;
-    uint256     public presaleDeadline;
-    uint256     public startOfPresaleInBlockNumber;
-    uint256     public startOfPresaleInMinutes;
     address     public tokenContractAddress;
+    address     public hotWallet;
     bool        public crowdFundFrozen;
     bool        public crowdFundingLaunched;
     bool        public hotWalletSet;
     TableCoin   public tokenReward;
-    address     public hotWallet;
 
     event LaunchCrowdFund(bool launched);
     event FundTransfer(address _backer, uint256 _amount, bool didContribute);
@@ -131,7 +128,11 @@ contract CrowdFund is SafeMath, Owned {
         hotWalletSet = false;
     }
 
+
     // 1st step in deployment
+    /// @notice Will set the hot wallet address which will contain ethereum raised by the crowdfund
+    /// @param _hotWallet Specifies the Hot Wallet Address
+    /// @return Whether the operation completed successfully
     function setHotWallet(address _hotWallet) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
         hotWallet = _hotWallet;
         hotWalletSet = true;
@@ -139,19 +140,28 @@ contract CrowdFund is SafeMath, Owned {
         return true;
     }
 
+    /// @notice Will stop the crowdfunding and can only be invoked when there are 0 tokens left
     function stopCrowdFunding() onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
         assert(tokensLeft == 0);
         crowdFundFrozen = true;
         return true;
     }
 
+    /// @notice Safety hatch incase the crowdfunding campaign gets frozen after launch
     function startCrowdFunding() onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
         assert(tokensLeft > 0);
         crowdFundFrozen = false;
         return true;
     }
     
+    function addToReserve(uint256 _amount) onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
+        crowdFundReserve = safeAdd(crowdFundReserve, _amount);
+        return true;
+    }
+
     // 2nd step in deployment, starts crowdfund
+    /// @notice Used to set the amount of tokens in the contract reserve, and launches the crowdfunding
+    /// @param _amount Specifies the amount of tokens that are in the contract reserve
     function setCrowdFundReserve(uint256 _amount) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
         assert(hotWalletSet);
         require(_amount > 0);
@@ -164,7 +174,7 @@ contract CrowdFund is SafeMath, Owned {
         return true;
     }
 
-    // Used when someone needs to collect a refund
+    /// @notice Used when someone needsd to withdraw ethereum from the contract
     function safeWithdrawEth() payable {
         assert(ethBalances[msg.sender] > 0);
         require(msg.value == 0);
@@ -177,7 +187,8 @@ contract CrowdFund is SafeMath, Owned {
         }
     }
 
-    // low level purchase function
+    /// @notice low level token purchase function that handles all logic, and math involved
+    /// @param beneficiary this will be set to msg.sender by the contract
     function tokenPurchase(address beneficiary) payable {
         assert(!crowdFundFrozen);
         assert(tokensLeft > 0);

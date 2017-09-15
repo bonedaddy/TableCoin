@@ -17,12 +17,15 @@ TableCoin repository
 # Dev To Do
 
 1) Funding Goal In Ethers need to ber set
-2) Hot Wallet needs to be Set
-3) Tokens Left Needs To be Set
+2) Add natspec to all solidity files
+3) Test out the presale contract
+4) Do a security/code review
+5) Test
+6) Optimize
+7) Test
 
 
-
-## DEPLOYMENJT ORDER
+## DEPLOYMENT ORDER
 
 1)    function setHotWallet(address _hotWallet) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
         hotWallet = _hotWallet;
