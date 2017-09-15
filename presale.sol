@@ -34,13 +34,8 @@ contract Owned {
     }
 
     modifier onlyOwner() {
-        if (msg.sender == owner) {
-            _;
-        } else if (msg.sender == privilegedAccount) {
-            _;
-        } else {
-            revert();
-        }
+        assert(msg.sender == owner);
+        _;
     }
 
 
@@ -51,12 +46,6 @@ contract Owned {
         
     }
 
-
-    function setPrivilegedAccount(address _privAcct) onlyOwner returns (bool success) {
-        require(_privAcct != owner);
-        privilegedAccount = _privAcct;
-        return true;
-    }
 }
 
 contract SafeMath {

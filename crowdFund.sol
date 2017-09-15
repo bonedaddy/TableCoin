@@ -32,8 +32,7 @@ contract Owned {
     }
 
     modifier onlyOwner() {
-        if (msg.sender != owner || msg.sender != privilegedAccount)
-            revert();
+        assert(msg.sender == owner);
         _; // function code inserted here
     }
 
@@ -46,12 +45,6 @@ contract Owned {
         
     }
 
-
-    function setPrivilegedAccount(address _privAcct) onlyOwner returns (bool success) {
-        require(_privAcct != owner);
-        privilegedAccount = _privAcct;
-        return true;
-    }
 }
 
 contract SafeMath {
@@ -114,6 +107,7 @@ contract CrowdFund is SafeMath, Owned {
     event HotWalletSet(bool set);
     
     mapping (address => uint256) public balances;
+    mapping (address => uint256) ethBalances;
 
     modifier onlyAfterReserveSet() {
         assert(crowdFundReserve > 0);
@@ -170,6 +164,19 @@ contract CrowdFund is SafeMath, Owned {
         return true;
     }
 
+    // Used when someone needs to collect a refund
+    function safeWithdrawEth() payable {
+        assert(ethBalances[msg.sender] > 0);
+        require(msg.value == 0);
+        address addrToRefund = msg.sender;
+        uint256 amountRefund = ethBalances[msg.sender];
+        ethBalances[msg.sender] = 0;
+        if (addrToRefund.call.value(amountRefund)()) {
+        } else {
+            revert();
+        }
+    }
+
     // low level purchase function
     function tokenPurchase(address beneficiary) payable {
         assert(!crowdFundFrozen);
@@ -204,7 +211,8 @@ contract CrowdFund is SafeMath, Owned {
             FundTransfer(beneficiary, amountTBCReceive, true);
             hotWallet.transfer(amountCharged);
             if (amountRefund > 0) {
-                beneficiary.transfer(amountRefund);
+                // this forces the user to manually withdraw any additional ethereum
+                ethBalances[beneficiary] = safeAdd(ethBalances[beneficiary], amountRefund);
             }
         } else {
             revert();
