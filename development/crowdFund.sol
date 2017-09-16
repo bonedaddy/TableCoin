@@ -157,6 +157,7 @@ contract CrowdFund is SafeMath, Owned {
     function addToReserve(uint256 _amount) onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
         crowdFundReserve = safeAdd(crowdFundReserve, _amount);
         balances[this] = safeAdd(balances[this], _amount);
+        tokensLeft = safeAdd(tokensLeft, _amount);
         return true;
     }
 
