@@ -104,10 +104,6 @@ contract CrowdFund is SafeMath, Owned {
     mapping (address => uint256) public balances;
     mapping (address => uint256) ethBalances;
 
-    modifier onlyAfterReserveSet() {
-        require(crowdFundReserve > 0);
-        _;
-    }
 
     modifier onlyBeforeCrowdFundStart() {
         require(crowdFundFrozen);
@@ -127,16 +123,6 @@ contract CrowdFund is SafeMath, Owned {
     }
 
 
-    // 1st step in deployment
-    /// @notice Will set the hot wallet address which will contain ethereum raised by the crowdfund
-    /// @param _hotWallet Specifies the Hot Wallet Address
-    /// @return Whether the operation completed successfully
-    function setHotWallet(address _hotWallet) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
-        hotWallet = _hotWallet;
-        hotWalletSet = true;
-        HotWalletSet(true);
-        return true;
-    }
 
     /// @notice Will stop the crowdfunding and can only be invoked when there are 0 tokens left
     function stopCrowdFunding() onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
@@ -158,6 +144,17 @@ contract CrowdFund is SafeMath, Owned {
         crowdFundReserve = safeAdd(crowdFundReserve, _amount);
         balances[this] = safeAdd(balances[this], _amount);
         tokensLeft = safeAdd(tokensLeft, _amount);
+        return true;
+    }
+
+    // 1st step in deployment
+    /// @notice Will set the hot wallet address which will contain ethereum raised by the crowdfund
+    /// @param _hotWallet Specifies the Hot Wallet Address
+    /// @return Whether the operation completed successfully
+    function setHotWallet(address _hotWallet) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
+        hotWallet = _hotWallet;
+        hotWalletSet = true;
+        HotWalletSet(true);
         return true;
     }
 

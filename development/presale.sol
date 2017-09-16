@@ -110,10 +110,6 @@ contract Presale is SafeMath, Owned {
     mapping (address => uint256) public balances;
     mapping (address => uint256) ethBalances;
 
-    modifier onlyAfterReserveSet() {
-        require(crowdFundReserve > 0);
-        _;
-    }
 
     modifier onlyBeforeCrowdFundStart() {
         require(crowdFundFrozen);
