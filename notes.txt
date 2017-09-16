@@ -6,10 +6,11 @@ Need To Test:
 
 > presale
 > token contract
+> Crowfunding
 
 
+
+Notes:
+Discovered money concurrency bug through oyente, patched the bug but i need to test the code
 
 crowdfund testing:
-Everything seems to work
--> Need to do one more test after adding the hotwallet check
--> As far as I can tell the crowdfunding contract is working as expected

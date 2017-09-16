@@ -94,7 +94,7 @@ contract Presale is SafeMath, Owned {
     uint256     public tokensBought;
     uint256     public tokensLeft;
     uint256     public presaleDeadline;
-    uint256     public presaleDurationInMinutes = 1; // not factored for wei;
+    uint256     public presaleDurationInMinutes = 0; // not factored for wei;
     address     public tokenContractAddress;
     address     public hotWallet;
     bool        public crowdFundFrozen;
@@ -105,6 +105,7 @@ contract Presale is SafeMath, Owned {
     event LaunchCrowdFund(bool launched);
     event FundTransfer(address _backer, uint256 _amount, bool didContribute);
     event HotWalletSet(bool set);
+    event PresaleDurationSet(bool set);
 
     mapping (address => uint256) public balances;
     mapping (address => uint256) ethBalances;
@@ -124,8 +125,8 @@ contract Presale is SafeMath, Owned {
         _;
     }
 
-    function Presale() {
-        tokenContractAddress = 0xC852c0828676B62D15D7C10191A234d830d22e15;
+    function Presale(address _tokenContractAddress) {
+        tokenContractAddress = _tokenContractAddress;
         tokenReward = TableCoin(tokenContractAddress);
         crowdFundFrozen = true;
     }
@@ -143,50 +144,61 @@ contract Presale is SafeMath, Owned {
         return true;
     }
 
-     /// @notice used to add funds to the crowdfund reserve post launch
+    /// @notice used to add funds to the crowdfund reserve post launch
     /// @param _amount Specifies the amount of tokens to add
     function addToReserve(uint256 _amount) onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
         crowdFundReserve = safeAdd(crowdFundReserve, _amount);
         balances[this] = safeAdd(balances[this], _amount);
         tokensLeft = safeAdd(tokensLeft, _amount);
         return true;
-    } 
+    }
     
+
+    // 1st step in deployment
+    /// @notice used to set the duration of the presale in minutes this can only be ran ONCE
+    /// @param _durationInMinutes must be provided in units of wei
+    function setPresaleDurationInMinutes(uint256 _durationInMinutes) onlyOwner onlyBeforeCrowdFundStart returns (bool success) {
+        require(presaleDurationInMinutes == 0);
+        presaleDurationInMinutes = _durationInMinutes;
+        PresaleDurationSet(true);
+        return true;
+    }
       
-     // 1st step in deployment
+    // 2nd step in deployment
+    /// @notice Will set the hot wallet address which will contain ethereum raised by the crowdfund
+    /// @param _hotWallet Specifies the Hot Wallet Address
+    /// @return Whether the operation completed successfully
     function setHotWallet(address _hotWallet) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
+        require(presaleDurationInMinutes > 0);
         hotWallet = _hotWallet;
         hotWalletSet = true;
         HotWalletSet(true);
         return true;
     }
    
-    // 2nd step in deployment, starts crowdfund
+    // 3nd step in deployment, starts crowdfund
+    /// @notice Used to set the amount of tokens in the contract reserve, and launches the crowdfunding
+    /// @param _amount Specifies the amount of tokens that are in the contract reserve
     function setCrowdFundReserve(uint256 _amount) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
-        // prevents crowdfund from starting if the hotwallet hasn't been set
+        require(presaleDurationInMinutes > 0);
         require(hotWalletSet);
         require(_amount > 0);
         crowdFundReserve = _amount;
         tokensLeft = crowdFundReserve;
         crowdFundFrozen = false;
         crowdFundingLaunched = true;
-        // we can get rid of this if we hardcode duration in mimntues factored for wei
-        uint256 _presaleDeadline = mul(presaleDurationInMinutes, 1 minutes);
-        presaleDeadline = safeAdd(now, _presaleDeadline);
         balances[this] = crowdFundReserve;
         LaunchCrowdFund(true);
         return true;
     }
 
     /// @notice Used when someone needsd to withdraw ethereum from the contract
-    function safeWithdrawEth() payable {
+    function safeWithdrawEth() {
         require(ethBalances[msg.sender] > 0);
-        require(msg.value == 0);
         address addrToRefund = msg.sender;
         uint256 amountRefund = ethBalances[msg.sender];
         ethBalances[msg.sender] = 0;
-        if (addrToRefund.call.value(amountRefund)()) {
-        } else {
+        if (!addrToRefund.call.value(amountRefund)()) {
             revert();
         }
     }
@@ -194,6 +206,7 @@ contract Presale is SafeMath, Owned {
     // low level purchase function
     function tokenPurchase(address beneficiary) payable {
         require(!crowdFundFrozen);
+        require(presaleDurationInMinutes > 0);
         require(beneficiary != 0x0);
         require(now <= presaleDeadline);
         require(tokensLeft > 0);
@@ -222,9 +235,12 @@ contract Presale is SafeMath, Owned {
         if (tokensLeft == 0) {
             crowdFundFrozen = true;
         }
+        require(amountTBCReceive > 0);
         if (tokenReward.transfer(beneficiary, amountTBCReceive)) {
             FundTransfer(beneficiary, amountTBCReceive, true);
-            hotWallet.transfer(amountCharged);
+            if (!hotWallet.send(amountCharged)) {
+                revert();
+            }
             if (amountRefund > 0) {
                 // this forces the user to manually withdraw any additional ethereum
                 ethBalances[beneficiary] = safeAdd(ethBalances[beneficiary], amountRefund);

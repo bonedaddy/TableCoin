@@ -177,16 +177,12 @@ contract CrowdFund is SafeMath, Owned {
     }
 
     /// @notice Used when someone needsd to withdraw ethereum from the contract
-    function safeWithdrawEth() payable {
+    function safeWithdrawEth() {
         require(ethBalances[msg.sender] > 0);
-        if (msg.value > 0) {
-            ethBalances[msg.sender] = safeAdd(ethBalances[msg.sender], msg.value);
-        }
         address addrToRefund = msg.sender;
         uint256 amountRefund = ethBalances[msg.sender];
         ethBalances[msg.sender] = 0;
-        if (addrToRefund.call.value(amountRefund)()) {
-        } else {
+        if (!addrToRefund.call.value(amountRefund)()) {
             revert();
         }
     }
