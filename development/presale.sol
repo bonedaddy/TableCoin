@@ -143,7 +143,16 @@ contract Presale is SafeMath, Owned {
         return true;
     }
 
+     /// @notice used to add funds to the crowdfund reserve post launch
+    /// @param _amount Specifies the amount of tokens to add
+    function addToReserve(uint256 _amount) onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
+        crowdFundReserve = safeAdd(crowdFundReserve, _amount);
+        balances[this] = safeAdd(balances[this], _amount);
+        tokensLeft = safeAdd(tokensLeft, _amount);
+        return true;
+    } 
     
+      
      // 1st step in deployment
     function setHotWallet(address _hotWallet) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
         hotWallet = _hotWallet;
