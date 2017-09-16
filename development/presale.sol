@@ -1,4 +1,4 @@
-pragma solidity 0.4.16;
+pragma solidity 0.4.13;
 
 
 
@@ -34,7 +34,7 @@ contract Owned {
     }
 
     modifier onlyOwner() {
-        assert(msg.sender == owner);
+        require(msg.sender == owner);
         _;
     }
 
@@ -86,7 +86,7 @@ contract SafeMath {
 }
 
 
-contract CrowdFund is SafeMath, Owned {
+contract Presale is SafeMath, Owned {
 
     uint256     public tokenCostInWei = 3000000000000000;
     uint256     public fundingGoalInEther;
@@ -110,56 +110,60 @@ contract CrowdFund is SafeMath, Owned {
     mapping (address => uint256) ethBalances;
 
     modifier onlyAfterReserveSet() {
-        assert(crowdFundReserve > 0);
+        require(crowdFundReserve > 0);
         _;
     }
 
     modifier onlyBeforeCrowdFundStart() {
-        assert(crowdFundFrozen);
+        require(crowdFundFrozen);
         _;
     }
 
     modifier onlyAfterCrowdFundingLaunch() {
-        assert(crowdFundingLaunched);
+        require(crowdFundingLaunched);
         _;
     }
 
-    function CrowdFund() {
+    function Presale() {
         tokenContractAddress = 0xC852c0828676B62D15D7C10191A234d830d22e15;
         tokenReward = TableCoin(tokenContractAddress);
         crowdFundFrozen = true;
     }
 
-    // 1st step in deployment
+
+    function stopCrowdFunding() onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
+        require(tokensLeft == 0);
+        crowdFundFrozen = true;
+        return true;
+    }
+
+    function startCrowdFunding() onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
+        require(tokensLeft > 0);
+        crowdFundFrozen = false;
+        return true;
+    }
+
+    
+     // 1st step in deployment
     function setHotWallet(address _hotWallet) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
         hotWallet = _hotWallet;
         hotWalletSet = true;
         HotWalletSet(true);
         return true;
     }
-
-    function stopCrowdFunding() onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
-        assert(tokensLeft == 0);
-        crowdFundFrozen = true;
-        return true;
-    }
-
-    function startCrowdFunding() onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
-        assert(tokensLeft > 0);
-        crowdFundFrozen = false;
-        return true;
-    }
-    
+   
     // 2nd step in deployment, starts crowdfund
     function setCrowdFundReserve(uint256 _amount) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
         // prevents crowdfund from starting if the hotwallet hasn't been set
-        assert(hotWalletSet);
+        require(hotWalletSet);
         require(_amount > 0);
         crowdFundReserve = _amount;
         tokensLeft = crowdFundReserve;
         crowdFundFrozen = false;
         crowdFundingLaunched = true;
-        presaleDeadline = safeAdd(now, presaleDurationInMinutes);
+        // we can get rid of this if we hardcode duration in mimntues factored for wei
+        uint256 _presaleDeadline = mul(presaleDurationInMinutes, 1 minutes);
+        presaleDeadline = safeAdd(now, _presaleDeadline);
         balances[this] = crowdFundReserve;
         LaunchCrowdFund(true);
         return true;
@@ -167,7 +171,7 @@ contract CrowdFund is SafeMath, Owned {
 
     /// @notice Used when someone needsd to withdraw ethereum from the contract
     function safeWithdrawEth() payable {
-        assert(ethBalances[msg.sender] > 0);
+        require(ethBalances[msg.sender] > 0);
         require(msg.value == 0);
         address addrToRefund = msg.sender;
         uint256 amountRefund = ethBalances[msg.sender];
@@ -180,10 +184,10 @@ contract CrowdFund is SafeMath, Owned {
 
     // low level purchase function
     function tokenPurchase(address beneficiary) payable {
-        assert(!crowdFundFrozen);
+        require(!crowdFundFrozen);
         require(beneficiary != 0x0);
-        assert(now <= presaleDeadline);
-        assert(tokensLeft > 0);
+        require(now <= presaleDeadline);
+        require(tokensLeft > 0);
         require(msg.value > 0);
         require(msg.value >= tokenCostInWei);
          uint256 _amountTBCReceive = div(msg.value, tokenCostInWei);

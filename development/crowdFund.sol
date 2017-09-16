@@ -1,4 +1,4 @@
-pragma solidity 0.4.16;
+pragma solidity 0.4.13;
 
 contract TableCoin {
 
@@ -30,7 +30,7 @@ contract Owned {
     }
 
     modifier onlyOwner() {
-        assert(msg.sender == owner);
+        require(msg.sender == owner);
         _; // function code inserted here
     }
 
@@ -105,17 +105,17 @@ contract CrowdFund is SafeMath, Owned {
     mapping (address => uint256) ethBalances;
 
     modifier onlyAfterReserveSet() {
-        assert(crowdFundReserve > 0);
+        require(crowdFundReserve > 0);
         _;
     }
 
     modifier onlyBeforeCrowdFundStart() {
-        assert(crowdFundFrozen);
+        require(crowdFundFrozen);
         _;
     }
 
     modifier onlyAfterCrowdFundingLaunch() {
-        assert(crowdFundingLaunched);
+        require(crowdFundingLaunched);
         _;
     }
 
@@ -140,14 +140,14 @@ contract CrowdFund is SafeMath, Owned {
 
     /// @notice Will stop the crowdfunding and can only be invoked when there are 0 tokens left
     function stopCrowdFunding() onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
-        assert(tokensLeft == 0);
+        require(tokensLeft == 0);
         crowdFundFrozen = true;
         return true;
     }
 
     /// @notice Safety hatch incase the crowdfunding campaign gets frozen after launch
     function startCrowdFunding() onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
-        assert(tokensLeft > 0);
+        require(tokensLeft > 0);
         crowdFundFrozen = false;
         return true;
     }
@@ -164,7 +164,7 @@ contract CrowdFund is SafeMath, Owned {
     /// @notice Used to set the amount of tokens in the contract reserve, and launches the crowdfunding
     /// @param _amount Specifies the amount of tokens that are in the contract reserve
     function setCrowdFundReserve(uint256 _amount) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
-        assert(hotWalletSet);
+        require(hotWalletSet);
         require(_amount > 0);
         crowdFundReserve = _amount;
         tokensLeft = crowdFundReserve;
@@ -177,7 +177,7 @@ contract CrowdFund is SafeMath, Owned {
 
     /// @notice Used when someone needsd to withdraw ethereum from the contract
     function safeWithdrawEth() payable {
-        assert(ethBalances[msg.sender] > 0);
+        require(ethBalances[msg.sender] > 0);
         require(msg.value == 0);
         address addrToRefund = msg.sender;
         uint256 amountRefund = ethBalances[msg.sender];
@@ -191,8 +191,8 @@ contract CrowdFund is SafeMath, Owned {
     /// @notice low level token purchase function that handles all logic, and math involved
     /// @param beneficiary this will be set to msg.sender by the contract
     function tokenPurchase(address beneficiary) payable {
-        assert(!crowdFundFrozen);
-        assert(tokensLeft > 0);
+        require(!crowdFundFrozen);
+        require(tokensLeft > 0);
         require(beneficiary != 0x0);
         require(msg.value > 0);
         require(msg.value >= tokenCostInWei);
