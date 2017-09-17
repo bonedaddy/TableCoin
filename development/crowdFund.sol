@@ -212,9 +212,6 @@ contract CrowdFund is SafeMath, Owned {
         tokensBought = safeAdd(tokensBought, amountTBCReceive);
         tokensLeft = safeSub(tokensLeft, amountTBCReceive);
         crowdFundReserve = safeSub(crowdFundReserve, amountTBCReceive);
-        if (tokensLeft == 0) {
-            crowdFundFrozen = true;
-        }
         if (tokenReward.transfer(beneficiary, amountTBCReceive)) {
             FundTransfer(beneficiary, amountTBCReceive, true);
             hotWallet.transfer(amountCharged);
