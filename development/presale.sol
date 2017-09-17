@@ -104,12 +104,18 @@ contract Presale is SafeMath, Owned {
 
     event LaunchCrowdFund(bool launched);
     event FundTransfer(address _backer, uint256 _amount, bool didContribute);
+    event TokenWithdrawal(address _to, uint256 _amount, bool withdrawn);
     event HotWalletSet(bool set);
     event PresaleDurationSet(bool set);
 
     mapping (address => uint256) public balances;
     mapping (address => uint256) ethBalances;
 
+
+    modifier presaleClosed() {
+        require(now > presaleDeadline);
+        _;
+    }
 
     modifier onlyBeforeCrowdFundStart() {
         require(crowdFundFrozen);
@@ -150,6 +156,15 @@ contract Presale is SafeMath, Owned {
     }
     
 
+    // NOT TESTED YET
+    // @notice used to return any remaining tokens left in the contract
+    function withdrawRemainingTokens() onlyOwner presaleClosed public returns (bool success) {
+        require(tokensLeft > 0);
+        tokenReward.transfer(msg.sender, tokensLeft);
+        TokenWithdrawal(msg.sender, tokensLeft, true);
+        return true;
+    }
+
     // 1st step in deployment
     /// @notice used to set the duration of the presale in minutes this can only be ran ONCE
     /// @param _durationInMinutes must be provided in units of wei
@@ -184,6 +199,8 @@ contract Presale is SafeMath, Owned {
         crowdFundFrozen = false;
         crowdFundingLaunched = true;
         balances[this] = crowdFundReserve;
+        uint256 _presaleDeadline = mul(presaleDurationInMinutes, 1 minutes);
+        presaleDeadline = safeAdd(now, _presaleDeadline);
         LaunchCrowdFund(true);
         return true;
     }
