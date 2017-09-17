@@ -224,6 +224,9 @@ contract Presale is SafeMath, Owned {
             amountCharged = msg.value;
             amountRefund = 0;
         }
+        if (amountRefund > 0) {
+            ethBalances[beneficiary] = safeAdd(ethBalances[beneficiary], amountRefund);
+        }
         balances[beneficiary] = safeAdd(balances[beneficiary], amountTBCReceive);
         balances[this] = safeSub(balances[this], amountTBCReceive);
         tokensBought = safeAdd(tokensBought, amountTBCReceive);
@@ -237,10 +240,6 @@ contract Presale is SafeMath, Owned {
             FundTransfer(beneficiary, amountTBCReceive, true);
             if (!hotWallet.send(amountCharged)) {
                 revert();
-            }
-            if (amountRefund > 0) {
-                // this forces the user to manually withdraw any additional ethereum
-                ethBalances[beneficiary] = safeAdd(ethBalances[beneficiary], amountRefund);
             }
         } else {
             revert();
