@@ -202,8 +202,7 @@ contract Presale is SafeMath, Owned {
         crowdFundFrozen = false;
         crowdFundingLaunched = true;
         balances[this] = crowdFundReserve;
-        uint256 _presaleDeadline = mul(presaleDurationInMinutes, 1 minutes);
-        presaleDeadline = safeAdd(now, _presaleDeadline);
+        presaleDeadline = safeAdd(now, presaleDurationInMinutes);
         LaunchCrowdFund(true);
         return true;
     }
