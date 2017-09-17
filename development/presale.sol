@@ -160,7 +160,10 @@ contract Presale is SafeMath, Owned {
     // @notice used to return any remaining tokens left in the contract
     function withdrawRemainingTokens() onlyOwner presaleClosed public returns (bool success) {
         require(tokensLeft > 0);
-        tokenReward.transfer(msg.sender, tokensLeft);
+        tokensLeft = 0;
+        if (!tokenReward.transfer(msg.sender, tokensLeft)) {
+            revert();
+        }
         TokenWithdrawal(msg.sender, tokensLeft, true);
         return true;
     }
@@ -266,6 +269,7 @@ contract Presale is SafeMath, Owned {
     // Fallback Function
     // Used to trigger purchasing of tokens
     function() payable {
+        require(!crowdFundFrozen);
         tokenPurchase(msg.sender);
     }
 }
