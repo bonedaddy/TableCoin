@@ -127,9 +127,10 @@ contract Presale is SafeMath, Owned {
         _;
     }
 
-    function Presale(address _tokenContractAddress) {
+    function Presale(address _tokenContractAddress, uint256 _presaleDurationInMinutes) {
         tokenContractAddress = _tokenContractAddress;
         tokenReward = TableCoin(tokenContractAddress);
+        presaleDurationInMinutes = _presaleDurationInMinutes;
         crowdFundFrozen = true;
     }
 
@@ -169,16 +170,6 @@ contract Presale is SafeMath, Owned {
     }
 
     // 1st step in deployment
-    /// @notice used to set the duration of the presale in minutes this can only be ran ONCE
-    /// @param _durationInMinutes must be provided in units of wei
-    function setPresaleDurationInMinutes(uint256 _durationInMinutes) onlyOwner onlyBeforeCrowdFundStart returns (bool success) {
-        require(presaleDurationInMinutes == 0);
-        presaleDurationInMinutes = _durationInMinutes;
-        PresaleDurationSet(true);
-        return true;
-    }
-      
-    // 2nd step in deployment
     /// @notice Will set the hot wallet address which will contain ethereum raised by the crowdfund
     /// @param _hotWallet Specifies the Hot Wallet Address
     /// @return Whether the operation completed successfully
@@ -190,7 +181,7 @@ contract Presale is SafeMath, Owned {
         return true;
     }
    
-    // 3nd step in deployment, starts crowdfund
+    // 2nd step in deployment, starts crowdfund
     /// @notice Used to set the amount of tokens in the contract reserve, and launches the crowdfunding
     /// @param _amount Specifies the amount of tokens that are in the contract reserve
     function setCrowdFundReserve(uint256 _amount) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
@@ -202,7 +193,7 @@ contract Presale is SafeMath, Owned {
         crowdFundFrozen = false;
         crowdFundingLaunched = true;
         balances[this] = crowdFundReserve;
-        presaleDeadline = safeAdd(now, presaleDurationInMinutes);
+        presaleDeadline = now + presaleDurationInMinutes * 1 minutes;
         LaunchCrowdFund(true);
         return true;
     }
