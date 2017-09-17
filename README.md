@@ -25,6 +25,11 @@ TableCoin repository
 7) Test
 
 
+# notes
+
+make token price divisble by a whole number
+
+
 ## DEPLOYMENT ORDER
 
 1)    function setHotWallet(address _hotWallet) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
