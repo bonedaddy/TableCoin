@@ -4,8 +4,8 @@ pragma solidity 0.4.13;
 
 contract TableCoin {
 
-    // Need to statically set
-    uint256 public crowdFundReserveAmount;
+    // 100,000 in wei
+    uint256 public crowdFundReserveAmount = 100000000000000000000000;
 
     event Transfer(address indexed _from, address indexed _to, uint256 _amount);
 
@@ -112,11 +112,6 @@ contract Presale is SafeMath, Owned {
     mapping (address => uint256) ethBalances;
 
 
-    modifier presaleClosed() {
-        require(now > presaleDeadline);
-        _;
-    }
-
     modifier onlyBeforeCrowdFundStart() {
         require(crowdFundFrozen);
         _;
@@ -137,32 +132,26 @@ contract Presale is SafeMath, Owned {
 
     function stopCrowdFunding() onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
         require(now > presaleDeadline);
+        require(!crowdFundFrozen);
         crowdFundFrozen = true;
         return true;
     }
 
     function startCrowdFunding() onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
         require(tokensLeft > 0);
+        require(crowdFundFrozen);
         crowdFundFrozen = false;
         return true;
     }
 
-    /// @notice used to add funds to the crowdfund reserve post launch
-    /// @param _amount Specifies the amount of tokens to add
-    function addToReserve(uint256 _amount) onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
-        crowdFundReserve = safeAdd(crowdFundReserve, _amount);
-        balances[this] = safeAdd(balances[this], _amount);
-        tokensLeft = safeAdd(tokensLeft, _amount);
-        return true;
-    }
-    
-
     // NOT TESTED YET
     // @notice used to return any remaining tokens left in the contract
-    function withdrawRemainingTokens() onlyOwner presaleClosed public returns (bool success) {
-        require(tokensLeft > 0);
-        tokensLeft = 0;
-        if (!tokenReward.transfer(msg.sender, tokensLeft)) {
+    function withdrawRemainingTokens() onlyOwner public returns (bool success) {
+        require(now > presaleDeadline);
+        require(balances[this] > 0);
+        uint256 balanceLeft = balances[this];
+        balances[this] = 0;
+        if (!tokenReward.transfer(msg.sender, balanceLeft)) {
             revert();
         }
         TokenWithdrawal(msg.sender, tokensLeft, true);
