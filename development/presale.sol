@@ -144,13 +144,14 @@ contract Presale is SafeMath, Owned {
         return true;
     }
 
-    // NOT TESTED YET
-    // @notice used to return any remaining tokens left in the contract
+    // @notice used to return any remaining tokens left in the contract after the presale is closed
     function withdrawRemainingTokens() onlyOwner public returns (bool success) {
         require(now > presaleDeadline);
         require(balances[this] > 0);
         uint256 balanceLeft = balances[this];
         balances[this] = 0;
+        tokensLeft = 0;
+        crowdFundReserve = 0;
         if (!tokenReward.transfer(msg.sender, balanceLeft)) {
             revert();
         }
@@ -199,6 +200,7 @@ contract Presale is SafeMath, Owned {
     }
 
     // low level purchase function
+    /// @param beneficiary this will be set to msg.sender by the contract
     function tokenPurchase(address beneficiary) payable {
         require(!crowdFundFrozen);
         require(presaleDurationInMinutes > 0);
