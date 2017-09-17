@@ -224,9 +224,6 @@ contract Presale is SafeMath, Owned {
         require(!crowdFundFrozen);
         require(presaleDurationInMinutes > 0);
         require(beneficiary != 0x0);
-        if (now > presaleDeadline) {
-            crowdFundFrozen = true;
-        }
         require(now <= presaleDeadline);
         require(tokensLeft > 0);
         require(msg.value > 0);
