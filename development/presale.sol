@@ -34,8 +34,13 @@ contract Owned {
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner);
-        _;
+        if (msg.sender == owner) {
+            _;
+        } else if (msg.sender == privilegedAccount) {
+            _;
+        } else {
+            revert();
+        }
     }
 
 
@@ -43,9 +48,13 @@ contract Owned {
         require(_newOwner != owner);
         owner = _newOwner;
         return true;
-        
     }
 
+    function setPrivilegedAccount(address _privilegedAccount) onlyOwner returns (bool success) {
+        require(_privilegedAccount != privilegedAccount);
+        privilegedAccount = _privilegedAccount;
+        return true;
+    }
 }
 
 contract SafeMath {
@@ -104,11 +113,15 @@ contract Presale is SafeMath, Owned {
 
     event LaunchCrowdFund(bool launched);
     event FundTransfer(address _backer, uint256 _amount, bool didContribute);
+    event FiatContributionMade(bytes32 indexed _emailHash, uint256 _amount, bool indexed didContribute);
     event TokenWithdrawal(address _to, uint256 _amount, bool withdrawn);
+    event FiatTokenWithdrawal(address _to, uint256 _amount, bool withdrawn);
     event HotWalletSet(bool set);
     event PresaleDurationSet(bool set);
 
     mapping (address => uint256) public balances;
+    // this is used to only track balances of fiat contributions
+    mapping (bytes32 => uint256) public fiatContributionBalances;
     mapping (address => uint256) ethBalances;
 
 
@@ -131,18 +144,50 @@ contract Presale is SafeMath, Owned {
 
 
     function stopCrowdFunding() onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
-        require(now > presaleDeadline);
         require(!crowdFundFrozen);
         crowdFundFrozen = true;
         return true;
     }
 
     function startCrowdFunding() onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
-        require(tokensLeft > 0);
         require(crowdFundFrozen);
         crowdFundFrozen = false;
         return true;
     }
+
+    /// @notice this is used for fiat donations
+    /// @param _backerEmail is the email address associated with a fiat backer
+    /// @param _amount is the amount of tokens that have been bought
+    function logFiatContribution(string _backerEmail, uint256 _amount) onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
+        require(_amount > 0);
+        bytes32 shaEmail = sha256(_backerEmail);
+        fiatContributionBalances[shaEmail] = safeAdd(fiatContributionBalances[shaEmail], _amount);
+        tokensBought = safeAdd(tokensBought, _amount);
+        tokensLeft = safeSub(tokensLeft, _amount);
+        crowdFundReserve = safeSub(crowdFundReserve, _amount);
+        FiatContributionMade(shaEmail, _amount, true);
+        return true;
+    }  
+
+
+
+    /// @notice this is used to withdraw rewards for fiat backers
+    /// @param _backerEmail this is used to uniquely identify fiat backers
+    /// @param _destinationAddress the address to forward funds too
+    function withdrawFiatContributionReward(string _backerEmail, address _destinationAddress) onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
+        require(_destinationAddress != owner);
+        bytes32 shaEmail = sha256(_backerEmail);
+        require(fiatContributionBalances[shaEmail] > 0);
+        uint256 rewardAmount = fiatContributionBalances[shaEmail];
+        fiatContributionBalances[shaEmail] = 0;
+        balances[this] = safeSub(balances[this], rewardAmount);
+        if (!tokenReward.transfer(_destinationAddress, rewardAmount)) {
+            revert();
+        }
+        FiatTokenWithdrawal(_destinationAddress, rewardAmount, true);
+        return true;
+    }
+
 
     // @notice used to return any remaining tokens left in the contract after the presale is closed
     function withdrawRemainingTokens() onlyOwner public returns (bool success) {
@@ -155,7 +200,7 @@ contract Presale is SafeMath, Owned {
         if (!tokenReward.transfer(msg.sender, balanceLeft)) {
             revert();
         }
-        TokenWithdrawal(msg.sender, tokensLeft, true);
+        TokenWithdrawal(msg.sender, balanceLeft, true);
         return true;
     }
 

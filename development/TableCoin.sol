@@ -140,9 +140,4 @@ contract TableCoin is SafeMath, Owned {
     ////////////////////
     //ERC-20 Functions//
     ////////////////////
-
-    function() payable {
-        require(msg.value == 0);
-    }
-
 }

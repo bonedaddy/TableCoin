@@ -3,44 +3,15 @@
 TableCoin repository
 
 
-# To Do
-* Test TableCoin
-* Write crowdFund
-* Test crowdFund
-* Security Audit
-* Test
-* Optimize
-* Test
-* Write Deployment Guide
-* Add natspec documentation
+# Deployment steps (PRESALE)
+* 1) Deploy TableCoin.sol
+* 2) Deploy presale.sol (provide address of token contract, and duration of presale in minutes)
+* 3) Execute the 'setHotWallet' function of presale.sol
+* 4) Send the amount of tokens available in the presale to the presale contract address
+* 5) Go to https://etherconverter.online/ and enter in the number of tokens available in the presale into the "Ether" text field.
+* 6) Copy the data from the "Wei" text field, and while executing the 'setCrowdFundReserve' function, enter that data into the 'amount' field. This will then set the balance of the smart contract, and launch the presale.
 
-# Dev To Do
-
-1) Funding Goal In Ethers need to ber set
-2) Add natspec to all solidity files
-3) Test out the presale contract
-4) Do a security/code review
-5) Test
-6) Optimize
-7) Test
-
-
-# notes
-
-make token price divisble by a whole number
-
-
-## DEPLOYMENT ORDER
-
-1)    function setHotWallet(address _hotWallet) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
-        hotWallet = _hotWallet;
-        return true;
-    }
-
-2)    function setCrowdFundReserve(uint256 _amount) onlyOwner onlyBeforeCrowdFundStart public returns (bool success) {
-        crowdFundReserve = _amount;
-        tokensLeft = crowdFundReserve;
-        crowdFundFrozen = false;
-        LaunchCrowdFund(true);
-        return true;
-    }
+# Deployment steps (crowdfund)
+* 1) Deploy the crowdFund.sol smart contract providing the address of the token contract
+* 2) Execute the 'setHotWallet' function of crowdFund.sol
+* 3) Execute the 'setCrowdFundReserve' function of crowdFund.sol, providing the total number of tokens available in the crowdFund (follow the same steps 5+6 from the presale deployment) this will then launch the crowdfund.
