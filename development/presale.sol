@@ -97,7 +97,8 @@ contract SafeMath {
 
 contract Presale is SafeMath, Owned {
 
-    uint256     public tokenCostInWei = 3000000000000000;
+    // token cost in wei 0.0025ETH (the discounted presale rate)
+    uint256     public tokenCostInWei = 2500000000000000;
     uint256     public fundingGoalInEther;
     uint256     public crowdFundReserve = 0;
     uint256     public tokensBought;
