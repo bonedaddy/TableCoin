@@ -66,8 +66,9 @@ contract SafeMath {
 contract TableCoin is SafeMath, Owned {
 
     string public name;
-    string public symbol;
+    string public symbol; //TAC is symbol
     uint256 public totalSupply;
+    uint256 public tacPassCostInWei = 10000000000000000000000;
     uint8 public decimals;
 
     // Balances
@@ -85,13 +86,16 @@ contract TableCoin is SafeMath, Owned {
         name = _name;
         symbol = _symbol;
         decimals = 18;
+        // 1Bil in Wei
+        totalSupply = 1000000000000000000000000000;
+        balances[owner] = totalSupply;
     }
 
 
     //ERC-20 Functions//
     ////////////////////
-
     function transfer(address _to, uint256 _amount) public returns (bool success) {
+        require(_to != address(0));
         require(_amount > 0);
         require(balances[msg.sender] - _amount >= 0);
         require(balances[_to] + _amount > balances[_to]);
@@ -101,6 +105,24 @@ contract TableCoin is SafeMath, Owned {
         return true;
     }
 
+    function transferFrom(address _from, address _to, uint256 _amount) public returns (bool success) {
+        require(_to != address(0));
+        require(allowance[_from][msg.sender] > 0);
+        require(allowance[_from][msg.sender] - _amount > 0);
+        require(balances[_from] - _amount > 0);
+        require(balances[_to] + _amount > balances[_to]);
+        balances[_from] -= _amount;
+        balances[_to] += _amount;
+        allowance[_from][msg.sender] -= _amount;
+        Transfer(_from, _to, _amount);
+        return true; 
+    }
+
+    function approve(address _spender, uint256 _amount) public returns (bool success) {
+        require(_amount > 0);
+        allowance[msg.sender][_spender] = _amount;
+        return true;
+    }
 
     //GETTER Functions//
     function balanceOf(address _person) constant returns (uint256 _amount) {
@@ -111,11 +133,11 @@ contract TableCoin is SafeMath, Owned {
         return allowance[_owner][_spender];
     }
 
-    function getTotalSupply() constant returns (uint256 _totalSupply) {
+    function totalSupply() constant returns (uint256 _totalSupply) {
         return totalSupply;
     }
-
-
+    
+    ////////////////////
     //ERC-20 Functions//
     ////////////////////
 }

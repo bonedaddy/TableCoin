@@ -1,0 +1,16 @@
+Tested:
+
+
+
+Need To Test:
+
+> presale
+> token contract
+> Crowfunding
+
+
+
+Notes:
+Discovered money concurrency bug through oyente, patched the bug but i need to test the code
+
+crowdfund testing:
