@@ -13,7 +13,7 @@ TableCoin repository
 * Crowdfund:
     * Initial number of tokens to be available (must convert  to units of wei when entering the information
 
-# Deployment steps (PRESALE)
+# Deployment steps (presale)
 * 1) Deploy TableCoin.sol
 * 2) Deploy presale.sol (provide address of token contract, and duration of presale in minutes)
 * 3) Execute the 'setHotWallet' function of presale.sol
