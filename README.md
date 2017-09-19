@@ -2,6 +2,16 @@
 
 TableCoin repository
 
+# Variables that need to be set before deployment:
+* Presale:
+    * Funding goal in ethereum
+
+# Information Needed before deployment:
+* Presale:
+    * Total number of tokens to be available (must convert to units of wei when entering the information)
+    * Duration of presale in minutes (DO NOT convert to units of wei, if you want 60 minutes enter 60, 90 minutes enter 90, etc....)
+* Crowdfund:
+    * Initial number of tokens to be available (must convert  to units of wei when entering the information
 
 # Deployment steps (PRESALE)
 * 1) Deploy TableCoin.sol
@@ -15,3 +25,14 @@ TableCoin repository
 * 1) Deploy the crowdFund.sol smart contract providing the address of the token contract
 * 2) Execute the 'setHotWallet' function of crowdFund.sol
 * 3) Execute the 'setCrowdFundReserve' function of crowdFund.sol, providing the total number of tokens available in the crowdFund (follow the same steps 5+6 from the presale deployment) this will then launch the crowdfund.
+
+
+
+
+
+# How to log fiat contributions (must be done from owner or privileged account)
+* 1) Execute the 'Log Fiat Contribution' function, providing the email of the backer, and the amount of tokens they bought converted into units of wei.
+* NOTE: Until the contribution is withdrawn, you can enter the sha256 hash of the email address into the 'fiat contribution balances' box of the contract admin page to retrieve the TAC balance of that backer.
+
+# How to withdraw fiat contributions (must be done from owner or privileged account)
+* 1) Execute the 'Withdraw Fiat Contribution Rewards' function, providing the email of the backer, and their destination ethereum address for the TAC to be stored in. The destination addrress can't be the owner, or the privileged account address
