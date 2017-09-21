@@ -26,44 +26,7 @@ contract Owned {
 
 }
 
-contract SafeMath {
-
-    function mul(uint256 a, uint256 b) internal constant returns (uint256) {
-        uint256 c = a * b;
-        assert(a == 0 || c / a == b);
-        return c;
-    }
-
-    function div(uint256 a, uint256 b) internal constant returns (uint256) {
-        // assert(b > 0); // Solidity automatically throws when dividing by 0
-        uint256 c = a / b;
-        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-        return c;
-    }
-
-    function safeToAdd(uint a, uint b) internal returns (bool) {
-        return (a + b >= a);
-    }
-
-    function safeAdd(uint a, uint b) internal returns (uint) {
-        if (!safeToAdd(a, b)) 
-            revert();
-        return a + b;
-    }
-
-    function safeToSubtract(uint a, uint b) internal returns (bool) {
-        return (b <= a);
-    }
-
-    function safeSub(uint a, uint b) internal returns (uint) {
-        if (!safeToSubtract(a, b)) 
-            revert();
-        return a - b;
-    } 
-
-}
-
-contract TableCoin is SafeMath, Owned {
+contract TableCoin is Owned {
 
     string public name;
     string public symbol; //TAC is symbol
