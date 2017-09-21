@@ -61,26 +61,16 @@ contract SafeMath {
         return c;
     }
 
-    function safeToAdd(uint a, uint b) internal returns (bool) {
-        return (a + b >= a);
-    }
-
-    function safeAdd(uint a, uint b) internal returns (uint) {
-        if (!safeToAdd(a, b)) 
-            revert();
-        return a + b;
-    }
-
-    function safeToSubtract(uint a, uint b) internal returns (bool) {
-        return (b <= a);
-    }
-
-    function safeSub(uint a, uint b) internal returns (uint) {
-        if (!safeToSubtract(a, b)) 
-            revert();
+    function sub(uint256 a, uint256 b) internal constant returns (uint256) {
+        assert(b <= a);
         return a - b;
-    } 
+    }
 
+    function add(uint256 a, uint256 b) internal constant returns (uint256) {
+        uint256 c = a + b;
+        assert(c >= a);
+        return c;
+    }
 }
 
 /// @title CrowdFunding Contract
