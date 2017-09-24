@@ -45,7 +45,7 @@ contract SafeMath {
         return (a + b >= a);
     }
 
-    function safeAdd(uint a, uint b) internal returns (uint) {
+    function add(uint a, uint b) internal returns (uint) {
         if (!safeToAdd(a, b)) 
             revert();
         return a + b;
@@ -55,7 +55,7 @@ contract SafeMath {
         return (b <= a);
     }
 
-    function safeSub(uint a, uint b) internal returns (uint) {
+    function sub(uint a, uint b) internal returns (uint) {
         if (!safeToSubtract(a, b)) 
             revert();
         return a - b;

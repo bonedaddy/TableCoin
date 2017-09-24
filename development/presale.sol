@@ -77,7 +77,7 @@ contract SafeMath {
         return (a + b >= a);
     }
 
-    function safeAdd(uint a, uint b) internal returns (uint) {
+    function add(uint a, uint b) internal returns (uint) {
         if (!safeToAdd(a, b)) 
             revert();
         return a + b;
@@ -87,7 +87,7 @@ contract SafeMath {
         return (b <= a);
     }
 
-    function safeSub(uint a, uint b) internal returns (uint) {
+    function sub(uint a, uint b) internal returns (uint) {
         if (!safeToSubtract(a, b)) 
             revert();
         return a - b;
@@ -163,10 +163,10 @@ contract Presale is SafeMath, Owned {
     function logFiatContribution(string _backerEmail, uint256 _amount) onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
         require(_amount > 0);
         bytes32 shaEmail = sha256(_backerEmail);
-        fiatContributionBalances[shaEmail] = safeAdd(fiatContributionBalances[shaEmail], _amount);
-        tokensBought = safeAdd(tokensBought, _amount);
-        tokensLeft = safeSub(tokensLeft, _amount);
-        crowdFundReserve = safeSub(crowdFundReserve, _amount);
+        fiatContributionBalances[shaEmail] = add(fiatContributionBalances[shaEmail], _amount);
+        tokensBought = add(tokensBought, _amount);
+        tokensLeft = sub(tokensLeft, _amount);
+        crowdFundReserve = sub(crowdFundReserve, _amount);
         FiatContributionMade(shaEmail, _amount, true);
         return true;
     }  
@@ -183,7 +183,7 @@ contract Presale is SafeMath, Owned {
         require(fiatContributionBalances[shaEmail] > 0);
         uint256 rewardAmount = fiatContributionBalances[shaEmail];
         fiatContributionBalances[shaEmail] = 0;
-        balances[this] = safeSub(balances[this], rewardAmount);
+        balances[this] = sub(balances[this], rewardAmount);
         if (!tokenReward.transfer(_destinationAddress, rewardAmount)) {
             revert();
         }
@@ -273,13 +273,13 @@ contract Presale is SafeMath, Owned {
             amountRefund = 0;
         }
         if (amountRefund > 0) {
-            ethBalances[beneficiary] = safeAdd(ethBalances[beneficiary], amountRefund);
+            ethBalances[beneficiary] = add(ethBalances[beneficiary], amountRefund);
         }
-        balances[beneficiary] = safeAdd(balances[beneficiary], amountTBCReceive);
-        balances[this] = safeSub(balances[this], amountTBCReceive);
-        tokensBought = safeAdd(tokensBought, amountTBCReceive);
-        tokensLeft = safeSub(tokensLeft, amountTBCReceive);
-        crowdFundReserve = safeSub(crowdFundReserve, amountTBCReceive);
+        balances[beneficiary] = add(balances[beneficiary], amountTBCReceive);
+        balances[this] = sub(balances[this], amountTBCReceive);
+        tokensBought = add(tokensBought, amountTBCReceive);
+        tokensLeft = sub(tokensLeft, amountTBCReceive);
+        crowdFundReserve = sub(crowdFundReserve, amountTBCReceive);
         if (tokensLeft == 0) {
             crowdFundFrozen = true;
         }

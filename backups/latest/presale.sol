@@ -67,7 +67,7 @@ contract SafeMath {
         return (a + b >= a);
     }
 
-    function safeAdd(uint a, uint b) internal returns (uint) {
+    function add(uint a, uint b) internal returns (uint) {
         if (!safeToAdd(a, b)) 
             revert();
         return a + b;
@@ -77,7 +77,7 @@ contract SafeMath {
         return (b <= a);
     }
 
-    function safeSub(uint a, uint b) internal returns (uint) {
+    function sub(uint a, uint b) internal returns (uint) {
         if (!safeToSubtract(a, b)) 
             revert();
         return a - b;
@@ -159,7 +159,7 @@ contract CrowdFund is SafeMath, Owned {
         tokensLeft = crowdFundReserve;
         crowdFundFrozen = false;
         crowdFundingLaunched = true;
-        presaleDeadline = safeAdd(now, presaleDurationInMinutes);
+        presaleDeadline = add(now, presaleDurationInMinutes);
         balances[this] = crowdFundReserve;
         LaunchCrowdFund(true);
         return true;
@@ -201,11 +201,11 @@ contract CrowdFund is SafeMath, Owned {
             amountCharged = msg.value;
             amountRefund = 0;
         }
-        balances[beneficiary] = safeAdd(balances[beneficiary], amountTBCReceive);
-        balances[this] = safeSub(balances[this], amountTBCReceive);
-        tokensBought = safeAdd(tokensBought, amountTBCReceive);
-        tokensLeft = safeSub(tokensLeft, amountTBCReceive);
-        crowdFundReserve = safeSub(crowdFundReserve, amountTBCReceive);
+        balances[beneficiary] = add(balances[beneficiary], amountTBCReceive);
+        balances[this] = sub(balances[this], amountTBCReceive);
+        tokensBought = add(tokensBought, amountTBCReceive);
+        tokensLeft = sub(tokensLeft, amountTBCReceive);
+        crowdFundReserve = sub(crowdFundReserve, amountTBCReceive);
         if (tokensLeft == 0) {
             crowdFundFrozen = true;
         }
@@ -214,7 +214,7 @@ contract CrowdFund is SafeMath, Owned {
             hotWallet.transfer(amountCharged);
             if (amountRefund > 0) {
                 // this forces the user to manually withdraw any additional ethereum
-                ethBalances[beneficiary] = safeAdd(ethBalances[beneficiary], amountRefund);
+                ethBalances[beneficiary] = add(ethBalances[beneficiary], amountRefund);
             }
         } else {
             revert();

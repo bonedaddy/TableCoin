@@ -65,7 +65,7 @@ contract SafeMath {
         return (a + b >= a);
     }
 
-    function safeAdd(uint a, uint b) internal returns (uint) {
+    function add(uint a, uint b) internal returns (uint) {
         if (!safeToAdd(a, b)) 
             revert();
         return a + b;
@@ -75,7 +75,7 @@ contract SafeMath {
         return (b <= a);
     }
 
-    function safeSub(uint a, uint b) internal returns (uint) {
+    function sub(uint a, uint b) internal returns (uint) {
         if (!safeToSubtract(a, b)) 
             revert();
         return a - b;
@@ -146,10 +146,10 @@ contract CrowdFund is SafeMath, Owned {
     function logFiatContribution(string _backerEmail, uint256 _amount) onlyOwner public returns (bool success) {
         require(_amount > 0);
         bytes32 shaEmail = sha256(_backerEmail);
-        fiatContributionBalances[shaEmail] = safeAdd(fiatContributionBalances[shaEmail], _amount);
-        tokensBought = safeAdd(tokensBought, _amount);
-        tokensLeft = safeSub(tokensLeft, _amount);
-        crowdFundReserve = safeSub(crowdFundReserve, _amount);
+        fiatContributionBalances[shaEmail] = add(fiatContributionBalances[shaEmail], _amount);
+        tokensBought = add(tokensBought, _amount);
+        tokensLeft = sub(tokensLeft, _amount);
+        crowdFundReserve = sub(crowdFundReserve, _amount);
         FiatContributionMade(shaEmail, _amount, true);
         return true;
     }  
@@ -166,7 +166,7 @@ contract CrowdFund is SafeMath, Owned {
         require(fiatContributionBalances[shaEmail] > 0);
         uint256 rewardAmount = fiatContributionBalances[shaEmail];
         fiatContributionBalances[shaEmail] = 0;
-        balances[this] = safeSub(balances[this], rewardAmount);
+        balances[this] = sub(balances[this], rewardAmount);
         if (!tokenReward.transfer(_destinationAddress, rewardAmount)) {
             revert();
         }
@@ -177,9 +177,9 @@ contract CrowdFund is SafeMath, Owned {
     /// @notice used to add funds to the crowdfund reserve post launch
     /// @param _amount Specifies the amount of tokens to add
     function addToReserve(uint256 _amount) onlyOwner onlyAfterCrowdFundingLaunch public returns (bool success) {
-        crowdFundReserve = safeAdd(crowdFundReserve, _amount);
-        balances[this] = safeAdd(balances[this], _amount);
-        tokensLeft = safeAdd(tokensLeft, _amount);
+        crowdFundReserve = add(crowdFundReserve, _amount);
+        balances[this] = add(balances[this], _amount);
+        tokensLeft = add(tokensLeft, _amount);
         return true;
     }
 
@@ -243,17 +243,17 @@ contract CrowdFund is SafeMath, Owned {
             amountCharged = msg.value;
             amountRefund = 0;
         }
-        balances[beneficiary] = safeAdd(balances[beneficiary], amountTBCReceive);
-        balances[this] = safeSub(balances[this], amountTBCReceive);
-        tokensBought = safeAdd(tokensBought, amountTBCReceive);
-        tokensLeft = safeSub(tokensLeft, amountTBCReceive);
-        crowdFundReserve = safeSub(crowdFundReserve, amountTBCReceive);
+        balances[beneficiary] = add(balances[beneficiary], amountTBCReceive);
+        balances[this] = sub(balances[this], amountTBCReceive);
+        tokensBought = add(tokensBought, amountTBCReceive);
+        tokensLeft = sub(tokensLeft, amountTBCReceive);
+        crowdFundReserve = sub(crowdFundReserve, amountTBCReceive);
         if (tokenReward.transfer(beneficiary, amountTBCReceive)) {
             FundTransfer(beneficiary, amountTBCReceive, true);
             hotWallet.transfer(amountCharged);
             if (amountRefund > 0) {
                 // this forces the user to manually withdraw any additional ethereum
-                ethBalances[beneficiary] = safeAdd(ethBalances[beneficiary], amountRefund);
+                ethBalances[beneficiary] = add(ethBalances[beneficiary], amountRefund);
             }
         } else {
             revert();

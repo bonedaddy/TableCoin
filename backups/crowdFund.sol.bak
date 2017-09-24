@@ -66,7 +66,7 @@ contract SafeMath {
         return (a + b >= a);
     }
 
-    function safeAdd(uint a, uint b) internal returns (uint) {
+    function add(uint a, uint b) internal returns (uint) {
         if (!safeToAdd(a, b)) 
             revert();
         return a + b;
@@ -76,7 +76,7 @@ contract SafeMath {
         return (b <= a);
     }
 
-    function safeSub(uint a, uint b) internal returns (uint) {
+    function sub(uint a, uint b) internal returns (uint) {
         if (!safeToSubtract(a, b)) 
             revert();
         return a - b;
@@ -160,11 +160,11 @@ contract CrowdFund is SafeMath, Owned {
         uint256 amountCharged;
         amountCharged = amountChargedCalculator(amountTBCReceive, msg.value);
         if (amountTBCReceive > tokensLeft) {
-            uint256 amountRefund = safeSub(msg.value, amountCharged);
+            uint256 amountRefund = sub(msg.value, amountCharged);
         }
-        balances[msg.sender] = safeAdd(balances[msg.sender], amountTBCReceive);
-        tokensBought = safeAdd(tokensBought, amountTBCReceive);
-        tokensLeft = safeSub(tokensLeft, amountTBCReceive);
+        balances[msg.sender] = add(balances[msg.sender], amountTBCReceive);
+        tokensBought = add(tokensBought, amountTBCReceive);
+        tokensLeft = sub(tokensLeft, amountTBCReceive);
         if (tokenReward.transfer(msg.sender, amountTBCReceive)) {
             FundTransfer(msg.sender, amountTBCReceive, true);
             hotWallet.transfer(amountCharged);
