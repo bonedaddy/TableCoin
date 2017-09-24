@@ -26,7 +26,34 @@ contract Owned {
 
 }
 
-contract TableCoin is Owned {
+contract SafeMath {
+
+    function mul(uint256 a, uint256 b) internal constant returns (uint256) {
+        uint256 c = a * b;
+        assert(a == 0 || c / a == b);
+        return c;
+    }
+
+    function div(uint256 a, uint256 b) internal constant returns (uint256) {
+        // assert(b > 0); // Solidity automatically throws when dividing by 0
+        uint256 c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+        return c;
+    }
+
+    function sub(uint256 a, uint256 b) internal constant returns (uint256) {
+        assert(b <= a);
+        return a - b;
+    }
+
+    function add(uint256 a, uint256 b) internal constant returns (uint256) {
+        uint256 c = a + b;
+        assert(c >= a);
+        return c;
+    }
+}
+
+contract TableCoin is Owned, SafeMath {
 
     string public name;
     string public symbol; //TAC is symbol
@@ -62,8 +89,8 @@ contract TableCoin is Owned {
         require(_amount > 0);
         require(balances[msg.sender] - _amount >= 0);
         require(balances[_to] + _amount > balances[_to]);
-        balances[msg.sender] -= _amount;
-        balances[_to] += _amount;
+        balances[msg.sender] = sub(balances[msg.sender], _amount);
+        balances[_to] = add(balances[_to], _amount);
         Transfer(msg.sender, _to, _amount);
         return true;
     }
@@ -74,9 +101,9 @@ contract TableCoin is Owned {
         require(allowance[_from][msg.sender] - _amount > 0);
         require(balances[_from] - _amount > 0);
         require(balances[_to] + _amount > balances[_to]);
-        balances[_from] -= _amount;
-        balances[_to] += _amount;
-        allowance[_from][msg.sender] -= _amount;
+        balances[_from] = sub(balances[_from], _amount);
+        balances[_to] = add(balances[_to], _amount);
+        allowance[_from][msg.sender] = sub(allowance[_from][msg.sender], _amount);
         Transfer(_from, _to, _amount);
         return true; 
     }

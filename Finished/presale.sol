@@ -46,13 +46,13 @@ contract Owned {
 
 
     function transferOwnership(address _newOwner) onlyOwner returns (bool success) {
-        require(_newOwner != owner);
+        require(_newOwner == owner);
         owner = _newOwner;
         return true;
     }
 
     function setPrivilegedAccount(address _privilegedAccount) onlyOwner returns (bool success) {
-        require(_privilegedAccount != privilegedAccount);
+        require(_privilegedAccount == privilegedAccount);
         privilegedAccount = _privilegedAccount;
         return true;
     }

@@ -31,19 +31,27 @@ contract Owned {
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner);
-        _; // function code inserted here
+        if (msg.sender == owner) {
+            _;
+        } else if (msg.sender == privilegedAccount) {
+            _;
+        } else {
+            revert();
+        }
     }
 
 
     function transferOwnership(address _newOwner) onlyOwner returns (bool success) {
-        if (msg.sender != owner)
-            revert();
+        require(_newOwner == owner);
         owner = _newOwner;
         return true;
-        
     }
 
+    function setPrivilegedAccount(address _privilegedAccount) onlyOwner returns (bool success) {
+        require(_privilegedAccount == privilegedAccount);
+        privilegedAccount = _privilegedAccount;
+        return true;
+    }
 }
 
 contract SafeMath {
